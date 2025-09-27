@@ -383,7 +383,8 @@ uint16_t DFRobot_C4001::getKeepTimerout(void)
 
 bool DFRobot_C4001::setDetectionRange(uint16_t min, uint16_t max, uint16_t trig)
 {
-	Serial.printf("%s:%d min %5.2fm max %5.2fm trigger at %5.2fm\n");
+	Serial.printf("%s min=%d-cm max=%d-cm trigger=%d-cm\n",
+			      __FUNCTION__, min, max, trig);
     if (max < 240 || max > 2000)
         return false;
 
