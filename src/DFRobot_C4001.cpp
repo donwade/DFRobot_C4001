@@ -380,11 +380,60 @@ uint16_t DFRobot_C4001::getKeepTimerout(void)
     }
 }
 
-
-bool DFRobot_C4001::setDetectionRange(uint16_t min, uint16_t max, uint16_t trig)
+void DFRobot_C4001::autoscaleCM (cm input, char *out)
 {
-	Serial.printf("%s min=%d-cm max=%d-cm trigger=%d-cm\n",
+	assert(out);
+	if (input < 100)
+		sprintf(out, "%dcm", input);
+	else
+	{
+		uint16_t m, m2;
+		m = input /100;
+		m2 = input - m * 100;
+		sprintf(out, m2 ? "%dm %dcm" : "%dm", m, m2); 
+	}
+}
+
+void DFRobot_C4001::autoscaleIN (cm input, char *out)
+{
+	assert(out);
+	uint16_t inches;
+
+	inches = ((float) input/ 2.54);
+	
+	if (input < 12)
+		sprintf(out, "%d\"", input);
+	else
+	{
+		uint16_t feet, in;
+		feet = inches /12;
+		in = inches - feet * 12;
+		sprintf(out, in ? "%d\'-%d\"" : "%d\'", feet, in); 
+	}
+}
+
+
+
+bool DFRobot_C4001::setDetectionRange(cm min, cm max, cm trig)
+{
+	char amin[20], amax[20], atrig[20];
+	
+	Serial.printf("%s min=%dcm max=%dcm trigger=%dcm\n",
 			      __FUNCTION__, min, max, trig);
+
+	autoscaleCM(min, amin);
+	autoscaleCM(max, amax);
+	autoscaleCM(trig, atrig);
+	Serial.printf("%s min=%s max=%s trigger=%s\n",
+			      __FUNCTION__, amin, amax, atrig);
+
+	autoscaleIN(min, amin);
+	autoscaleIN(max, amax);
+	autoscaleIN(trig, atrig);
+	Serial.printf("%s min=%s max=%s trigger=%s\n",
+			      __FUNCTION__, amin, amax, atrig);
+	
+	
     if (max < 240 || max > 2000)
         return false;
 

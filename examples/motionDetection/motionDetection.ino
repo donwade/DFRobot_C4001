@@ -83,7 +83,7 @@ void setup()
      * max Detection range Maximum distance, unit cm, range 2.4~20m (240~2000)
      * trig Detection range Maximum distance, unit cm, default trig = max
      */
-    if (radar.setDetectionRange(/*min*/ 30, /*max*/ 1000, /*trig*/ 1000))
+    if (radar.setDetectionRange(/*min*/ 30, /*max*/ 1001, /*trig*/ 1003))
         Serial.println("set detection range successfully!");
 
     // set trigger sensitivity 0 - 9

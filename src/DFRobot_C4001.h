@@ -21,6 +21,8 @@
 
 #endif
 
+typedef uint16_t cm;
+
 /**
  * @struct sSensorStatus_t
  * @brief sensor status
@@ -243,7 +245,11 @@ uint16_t getMinRange(void);
  * @param trig The trigger distance (unit: cm) ranges from 2.4 to 20m (240 to 2000). The actual configuration range does not exceed the maximum and minimum detection distance.
  * @return true or false
  */
-bool setDetectionRange(uint16_t min, uint16_t max, uint16_t trig);
+
+void autoscaleCM (cm input, char *out);
+void autoscaleIN (cm input, char *out);
+
+bool setDetectionRange(cm min, cm max, cm trig);
 
 /**
  * @fn setTrigSensitivity
