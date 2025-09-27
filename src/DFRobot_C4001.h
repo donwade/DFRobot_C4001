@@ -21,6 +21,8 @@
 
 #endif
 
+typedef uint16_t cm;
+
 /**
  * @struct sSensorStatus_t
  * @brief sensor status
@@ -411,12 +413,15 @@ void setFrettingDetection(eSwitch_t sta);
  * @return eSwitch_t
  */
 eSwitch_t getFrettingDetection(void);
+
 protected:
+
 sResponseData_t wRCMD(String cmd1, uint8_t count);
 void writeCMD(String cmd1, String cmd2, uint8_t count);
 sAllData_t anaysisData(uint8_t *data, uint8_t len);
 sResponseData_t anaysisResponse(uint8_t *data, uint8_t len, uint8_t count);
 bool sensorStop(void);
+
 private:
 uint8_t _addr;
 uint8_t _M_Flag = 0;

@@ -380,10 +380,21 @@ uint16_t DFRobot_C4001::getKeepTimerout(void)
     }
 }
 
+/*
+ * min Detection range Minimum distance, unit cm, range 0.3~20m (30~2000), not exceeding max, otherwise the function is abnormal.
+ * max Detection range Maximum distance, unit cm, range 2.4~20m (240~2000)
+ * trig Detection range Maximum distance, unit cm, default trig = max
+ * 
+ * if (radar.setDetectionRange(30, 1000, 1000))
+ */
 
-bool DFRobot_C4001::setDetectionRange(uint16_t min, uint16_t max, uint16_t trig)
+
+
+bool DFRobot_C4001::setDetectionRange(cm min, cm max, cm trig)
 {
-	Serial.printf("%s:%d min %5.2fm max %5.2fm trigger at %5.2fm\n");
+	Serial.printf("%s min=%d cm  max=%d cm   trigger=%d cm\n",
+			__FUNCTION__, min, max, trig);
+	
     if (max < 240 || max > 2000)
         return false;
 
@@ -921,12 +932,32 @@ sResponseData_t DFRobot_C4001::wRCMD(String cmd1, uint8_t count)
     delay(100);
     writeReg(0, (uint8_t *)START_SENSOR, strlen(START_SENSOR));
     delay(100);
-    return responseData;
+
+	String foo;
+	String func = __FUNCTION__;
+
+	foo=func + "cmd1 = " + cmd1 + " | count = " + count ;
+	Serial.println();
+	Serial.println(foo);
+
+	Serial.printf("b=%d r1=%f r2=%f r3=%f\n", 
+		responseData.status,
+		responseData.response1,
+		responseData.response2,
+		responseData.response3);
+	Serial.println();
+	
+	return responseData;
 }
 
 
 void DFRobot_C4001::writeCMD(String cmd1, String cmd2, uint8_t count)
 {
+	String foo = __FUNCTION__;
+	
+	foo+=" cmd1=" + cmd1 + "|  cmd2=" + cmd2 + " | count=" + count + "\n";
+	Serial.println(foo);
+	
     sensorStop();
     writeReg(0, (uint8_t *)cmd1.c_str(), cmd1.length());
     delay(100);
