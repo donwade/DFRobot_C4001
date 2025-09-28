@@ -612,6 +612,10 @@ uint32_t DFRobot_C4001::getTargetEnergy(void)
     return _buffer.energy;
 }
 
+float DFRobot_C4001::getTargetEnergyDb(void)
+{
+    return 10 * log((float)_buffer.energy/(float)0xFFFFFFFF);
+}
 
 bool DFRobot_C4001::setDetectThres(uint16_t min, uint16_t max, uint16_t thres)
 {

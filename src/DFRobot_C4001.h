@@ -372,6 +372,7 @@ float getTargetRange(void);
  * @return uint32_t
  */
 uint32_t getTargetEnergy(void);
+float    getTargetEnergyDb(void);
 
 /**
  * @fn setDetectThres

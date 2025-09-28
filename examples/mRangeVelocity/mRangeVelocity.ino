@@ -8,10 +8,13 @@
  * @date 2024-02-02
  * @url https://github.com/dfrobot/DFRobot_C4001
  */
+#ifdef ARDUINO_M5STACK_CORE2
+#include <M5Unified.h>
+#endif
 
 #include "DFRobot_C4001.h"
 
-#define I2C_COMMUNICATION  //use I2C for communication, but use the serial port for communication if the line of codes were masked
+//#define I2C_COMMUNICATION  //use I2C for communication, but use the serial port for communication if the line of codes were masked
 
 #ifdef  I2C_COMMUNICATION
 /*
@@ -32,13 +35,18 @@ DFRobot_C4001_I2C radar(&Wire, DEVICE_ADDR_0);
 SoftwareSerial mySerial(4, 5);
 DFRobot_C4001_UART radar(&mySerial, 9600);
 #elif defined(ESP32)
-DFRobot_C4001_UART radar(&Serial1, 9600, /*rx*/ D2, /*tx*/ D3);
+DFRobot_C4001_UART radar(&Serial1, 9600, /*rx*/ 13, /*tx*/ 14);
 #else
 DFRobot_C4001_UART radar(&Serial1, 9600);
 #endif
 #endif
 void setup()
 {
+
+#ifdef ARDUINO_M5STACK_CORE2
+    M5.begin();
+#endif
+
     Serial.begin(115200);
 
     while (!Serial)
@@ -95,6 +103,9 @@ void setup()
 
 void loop()
 {
+	static float fmax = -100;
+	static float fmin = 0;
+	
     Serial.print("target number = ");
     Serial.println(radar.getTargetNumber()); // must exist
     Serial.print("target Speed  = ");
@@ -105,8 +116,19 @@ void loop()
     Serial.print(radar.getTargetRange());
     Serial.println(" m");
 
-    Serial.print("target energy  = ");
-    Serial.println(radar.getTargetEnergy());
-    Serial.println();
+	uint32_t energyNow = radar.getTargetEnergy();
+    Serial.print("target energy    = ");
+    Serial.println(energyNow);
+
+	if (energyNow)
+	{
+	    float dbNow = radar.getTargetEnergyDb();
+	    
+	    if (dbNow > fmax) fmax = dbNow;
+	    if (dbNow < fmin) fmin = dbNow;
+	    Serial.printf("%5.3f < %5.3f < %5.3f\n", fmin, dbNow, fmax);
+	    Serial.println();
+	}
+	
     delay(100);
 }
