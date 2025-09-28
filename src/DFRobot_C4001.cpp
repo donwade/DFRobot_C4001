@@ -412,8 +412,6 @@ void DFRobot_C4001::autoscaleIN (cm input, char *out)
 	}
 }
 
-
-
 bool DFRobot_C4001::setDetectionRange(cm min, cm max, cm trig)
 {
 	char amin[20], amax[20], atrig[20];
@@ -1096,11 +1094,34 @@ bool DFRobot_C4001_UART::begin()
 {
 #ifdef ESP32
     _serial->begin(this->_baud, SERIAL_8N1, _txpin, _rxpin);
+
+	/*
+	 * min Detection range Minimum distance, unit cm, 
+			range 0.3~20m (30~2000), not exceeding max, otherwise the function is abnormal.
+	 * max Detection range Maximum distance, 
+			unit cm, range 2.4~20m (240~2000)
+	 * trig Detection range Maximum distance, unit cm, default trig = max
+	 */
+	char amin[20], amax[20], atrig[20];
+
+	Serial.printf("\nLIMITS:%s min=%dcm max=%dcm trigger=%dcm\n",
+				  __FUNCTION__, 240, 2000, 2000);
+
+	autoscaleIN(30, amin);
+	autoscaleIN(2000, amax);
+	autoscaleIN(2000, atrig);
+	Serial.printf("LIMITS:%s min=%s max=%s trigger=%s\n\n",
+				  __FUNCTION__, amin, amax, atrig);
+
 #elif defined(ARDUINO_AVR_UNO) || defined(ESP8266)
     _serial->begin(this->_baud);
     delay(1000);
 #else
     _serial->begin(this->_baud);  // M0 cannot create a begin in a construct
+    
+}
+
+    
 #endif
     return true;
 }
