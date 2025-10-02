@@ -246,8 +246,8 @@ uint16_t getMinRange(void);
  * @return true or false
  */
 
-void autoscaleCM(cm input, char *out);
-void autoscaleIN(cm input, char *out);
+void autoscaleCM (cm input, char *out);
+void autoscaleIN (cm input, char *out);
 
 bool setDetectionRange(cm min, cm max, cm trig);
 
@@ -435,7 +435,7 @@ virtual int16_t readReg(uint8_t reg, uint8_t *data, uint8_t len) = 0;
 class DFRobot_C4001_I2C : public DFRobot_C4001 {
 public:
 DFRobot_C4001_I2C(TwoWire *pWire = &Wire, uint8_t addr = DEVICE_ADDR_0);
-bool begin(void);
+bool begin(int sda = 2, int scl = 14);
 protected:
 virtual void writeReg(uint8_t reg, uint8_t *data, uint8_t len);
 virtual int16_t readReg(uint8_t reg, uint8_t *data, uint8_t len);

@@ -380,9 +380,58 @@ uint16_t DFRobot_C4001::getKeepTimerout(void)
     }
 }
 
-
-bool DFRobot_C4001::setDetectionRange(uint16_t min, uint16_t max, uint16_t trig)
+void DFRobot_C4001::autoscaleCM (cm input, char *out)
 {
+	assert(out);
+	if (input < 100)
+		sprintf(out, "%dcm", input);
+	else
+	{
+		uint16_t m, m2;
+		m = input /100;
+		m2 = input - m * 100;
+		sprintf(out, m2 ? "%dm %dcm" : "%dm", m, m2); 
+	}
+}
+
+void DFRobot_C4001::autoscaleIN (cm input, char *out)
+{
+	assert(out);
+	uint16_t inches;
+
+	inches = ((float) input/ 2.54);
+	
+	if (input < 12)
+		sprintf(out, "%d\"", input);
+	else
+	{
+		uint16_t feet, in;
+		feet = inches /12;
+		in = inches - feet * 12;
+		sprintf(out, in ? "%d\'-%d\"" : "%d\'", feet, in); 
+	}
+}
+
+bool DFRobot_C4001::setDetectionRange(cm min, cm max, cm trig)
+{
+	char amin[20], amax[20], atrig[20];
+	
+	Serial.printf("%s min=%dcm max=%dcm trigger=%dcm\n",
+			      __FUNCTION__, min, max, trig);
+
+	autoscaleCM(min, amin);
+	autoscaleCM(max, amax);
+	autoscaleCM(trig, atrig);
+	Serial.printf("%s min=%s max=%s trigger=%s\n",
+			      __FUNCTION__, amin, amax, atrig);
+
+	autoscaleIN(min, amin);
+	autoscaleIN(max, amax);
+	autoscaleIN(trig, atrig);
+	Serial.printf("%s min=%s max=%s trigger=%s\n",
+			      __FUNCTION__, amin, amax, atrig);
+	
+	
     if (max < 240 || max > 2000)
         return false;
 
@@ -563,6 +612,10 @@ uint32_t DFRobot_C4001::getTargetEnergy(void)
     return _buffer.energy;
 }
 
+float DFRobot_C4001::getTargetEnergyDb(void)
+{
+    return 10 * log((float)_buffer.energy/(float)0xFFFFFFFF);
+}
 
 bool DFRobot_C4001::setDetectThres(uint16_t min, uint16_t max, uint16_t thres)
 {
@@ -805,8 +858,6 @@ sResponseData_t DFRobot_C4001::anaysisResponse(uint8_t *data, uint8_t len, uint8
         if (data[i] == 'R' && data[i + 1] == 'e' && data[i + 2] == 's')
             break;
 
-
-
     if (i == len || i == 0)
     {
         responseData.status = false;
@@ -818,8 +869,6 @@ sResponseData_t DFRobot_C4001::anaysisResponse(uint8_t *data, uint8_t len, uint8
         for (j = 0; i < len; i++)
             if (data[i] == ' ')
                 space[j++] = i + 1;
-
-
 
         if (j != 0)
         {
@@ -953,10 +1002,8 @@ bool DFRobot_C4001::sensorStop(void)
     while (1)
     {
         if (len != 0)
-        {
             if (strstr((const char *)temp, "sensorStop") != NULL)
                 return true;
-        }
 
         memset(temp, 0, 200);
         delay(400);
@@ -1042,6 +1089,25 @@ bool DFRobot_C4001_UART::begin()
 {
 #ifdef ESP32
     _serial->begin(this->_baud, SERIAL_8N1, _txpin, _rxpin);
+
+	/*
+	 * min Detection range Minimum distance, unit cm, 
+			range 0.3~20m (30~2000), not exceeding max, otherwise the function is abnormal.
+	 * max Detection range Maximum distance, 
+			unit cm, range 2.4~20m (240~2000)
+	 * trig Detection range Maximum distance, unit cm, default trig = max
+	 */
+	char amin[20], amax[20], atrig[20];
+
+	Serial.printf("\nLIMITS:%s min=%dcm max=%dcm trigger=%dcm\n",
+				  __FUNCTION__, 240, 2000, 2000);
+
+	autoscaleIN(30, amin);
+	autoscaleIN(2000, amax);
+	autoscaleIN(2000, atrig);
+	Serial.printf("LIMITS:%s min=%s max=%s trigger=%s\n\n",
+				  __FUNCTION__, amin, amax, atrig);
+
 #elif defined(ARDUINO_AVR_UNO) || defined(ESP8266)
     _serial->begin(this->_baud);
     delay(1000);
