@@ -380,58 +380,9 @@ uint16_t DFRobot_C4001::getKeepTimerout(void)
     }
 }
 
-void DFRobot_C4001::autoscaleCM (cm input, char *out)
+
+bool DFRobot_C4001::setDetectionRange(uint16_t min, uint16_t max, uint16_t trig)
 {
-	assert(out);
-	if (input < 100)
-		sprintf(out, "%dcm", input);
-	else
-	{
-		uint16_t m, m2;
-		m = input /100;
-		m2 = input - m * 100;
-		sprintf(out, m2 ? "%dm %dcm" : "%dm", m, m2); 
-	}
-}
-
-void DFRobot_C4001::autoscaleIN (cm input, char *out)
-{
-	assert(out);
-	uint16_t inches;
-
-	inches = ((float) input/ 2.54);
-	
-	if (input < 12)
-		sprintf(out, "%d\"", input);
-	else
-	{
-		uint16_t feet, in;
-		feet = inches /12;
-		in = inches - feet * 12;
-		sprintf(out, in ? "%d\'-%d\"" : "%d\'", feet, in); 
-	}
-}
-
-bool DFRobot_C4001::setDetectionRange(cm min, cm max, cm trig)
-{
-	char amin[20], amax[20], atrig[20];
-	
-	Serial.printf("%s min=%dcm max=%dcm trigger=%dcm\n",
-			      __FUNCTION__, min, max, trig);
-
-	autoscaleCM(min, amin);
-	autoscaleCM(max, amax);
-	autoscaleCM(trig, atrig);
-	Serial.printf("%s min=%s max=%s trigger=%s\n",
-			      __FUNCTION__, amin, amax, atrig);
-
-	autoscaleIN(min, amin);
-	autoscaleIN(max, amax);
-	autoscaleIN(trig, atrig);
-	Serial.printf("%s min=%s max=%s trigger=%s\n",
-			      __FUNCTION__, amin, amax, atrig);
-	
-	
     if (max < 240 || max > 2000)
         return false;
 
@@ -612,10 +563,6 @@ uint32_t DFRobot_C4001::getTargetEnergy(void)
     return _buffer.energy;
 }
 
-float DFRobot_C4001::getTargetEnergyDb(void)
-{
-    return 10 * log((float)_buffer.energy/(float)0xFFFFFFFF);
-}
 
 bool DFRobot_C4001::setDetectThres(uint16_t min, uint16_t max, uint16_t thres)
 {
@@ -932,24 +879,21 @@ sAllData_t DFRobot_C4001::anaysisData(uint8_t *data, uint8_t len)
         allData.sta.workStatus = 1;
         allData.sta.initStatus = 1;
         char *token;
-        char *parts[10];    // Let's say there are at most 10 parts
-        int index = 0;      // Used to track the number of parts stored
+        char *parts[10] = { 0 };    // Let's say there are at most 10 parts
+        int index = 0;              // Used to track the number of parts stored
         token = strtok((char *)(data + location), ",");
 
-        while (token != NULL)
+        while (token != NULL && index < 10)
         {
-            parts[index] = token; // Stores partial Pointers in an array
-
-            if (index++ > 8)
-                break;
-
-            token = strtok(NULL, ","); // Continue to extract the next section
+            parts[index++] = token;     // Stores partial Pointers in an array
+            token = strtok(NULL, ",");  // Continue to extract the next section
         }
 
-        allData.target.number = atoi(parts[1]);
-        allData.target.range = atof(parts[3]) * 100;
-        allData.target.speed = atof(parts[4]) * 100;
-        allData.target.energy = atof(parts[5]);
+        // Defensive: check we have enough fields and they are not NULL
+        allData.target.number = (index > 1 && parts[1]) ? atoi(parts[1]) : 0;
+        allData.target.range = (index > 3 && parts[3]) ? atof(parts[3]) * 100 : 0;
+        allData.target.speed = (index > 4 && parts[4]) ? atof(parts[4]) * 100 : 0;
+        allData.target.energy = (index > 5 && parts[5]) ? atof(parts[5]) : 0;
     }
     else
     {
@@ -1031,9 +975,9 @@ DFRobot_C4001_I2C::DFRobot_C4001_I2C(TwoWire *pWire, uint8_t addr)
 }
 
 
-bool DFRobot_C4001_I2C::begin()
+bool DFRobot_C4001_I2C::begin(int sda /*=2*/, int scl /*=14*/)
 {
-    _pWire->begin();
+    _pWire->begin(sda, scl);
     _pWire->beginTransmission(_I2C_addr);
 
     if (_pWire->endTransmission() == 0)
@@ -1098,34 +1042,11 @@ bool DFRobot_C4001_UART::begin()
 {
 #ifdef ESP32
     _serial->begin(this->_baud, SERIAL_8N1, _txpin, _rxpin);
-
-	/*
-	 * min Detection range Minimum distance, unit cm, 
-			range 0.3~20m (30~2000), not exceeding max, otherwise the function is abnormal.
-	 * max Detection range Maximum distance, 
-			unit cm, range 2.4~20m (240~2000)
-	 * trig Detection range Maximum distance, unit cm, default trig = max
-	 */
-	char amin[20], amax[20], atrig[20];
-
-	Serial.printf("\nLIMITS:%s min=%dcm max=%dcm trigger=%dcm\n",
-				  __FUNCTION__, 240, 2000, 2000);
-
-	autoscaleIN(30, amin);
-	autoscaleIN(2000, amax);
-	autoscaleIN(2000, atrig);
-	Serial.printf("LIMITS:%s min=%s max=%s trigger=%s\n\n",
-				  __FUNCTION__, amin, amax, atrig);
-
 #elif defined(ARDUINO_AVR_UNO) || defined(ESP8266)
     _serial->begin(this->_baud);
     delay(1000);
 #else
     _serial->begin(this->_baud);  // M0 cannot create a begin in a construct
-    
-}
-
-    
 #endif
     return true;
 }

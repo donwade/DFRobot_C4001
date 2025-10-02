@@ -246,8 +246,8 @@ uint16_t getMinRange(void);
  * @return true or false
  */
 
-void autoscaleCM (cm input, char *out);
-void autoscaleIN (cm input, char *out);
+void autoscaleCM(cm input, char *out);
+void autoscaleIN(cm input, char *out);
 
 bool setDetectionRange(cm min, cm max, cm trig);
 
