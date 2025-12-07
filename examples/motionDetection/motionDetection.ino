@@ -54,11 +54,11 @@ void setup()
 
     while (!radar.begin())
     {
-        Serial.println("NO Deivces !");
+        Serial.println("NO 4001 found!");
         delay(1000);
     }
 
-    Serial.println("Device connected!");
+    Serial.println("4001 connected!");
 
     // exist Mode
     radar.setSensorMode(eExitMode);
@@ -69,9 +69,10 @@ void setup()
     Serial.printf("work status = %s\n", data.workStatus ? "RUNNING": "STOPPED");
 
     //  0 is exist   1 speed
-    Serial.printf("work mode  = %s\n", data.workMode ? "SPEED" : "DISTANCE");
+    Serial.printf("work mode  = %s\n", data.workMode ? "DETECT":"SPEED");
+
     //  0 no init    1 init success
-    Serial.printf("init status = %s\n",data.initStatus ? "DONE" : "NEEDS INIT" );
+    Serial.printf("init status = %s\n", data.initStatus ? "DONE":"FAILED)";
 
     /*
      * min Detection range Minimum distance, unit cm, range 0.3~20m (30~2000),

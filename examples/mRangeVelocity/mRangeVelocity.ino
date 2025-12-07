@@ -40,6 +40,17 @@ DFRobot_C4001_UART radar(&Serial1, 9600, /*rx*/ 13, /*tx*/ 14);
 DFRobot_C4001_UART radar(&Serial1, 9600);
 #endif
 #endif
+
+void ShowConfig(const char *message)
+{
+	Serial.printf("%s -----\n", message);
+    // show current  params
+    Serial.printf("min range = %d\n", radar.getTMinRange());
+    Serial.printf("max range = %d\n", radar.getTMaxRange());
+    Serial.printf("threshold range = %d\n", radar.getThresRange());
+    Serial.printf("fretting detection = %d\n\n", radar.getFrettingDetection());
+}
+
 void setup()
 {
 
@@ -49,16 +60,17 @@ void setup()
 
     Serial.begin(115200);
 
-    while (!Serial)
-        ;
+    while (!Serial);
 
     while (!radar.begin())
     {
-        Serial.println("NO Deivces !");
+        Serial.println("NO 4001 found!");
         delay(1000);
     }
 
-    Serial.println("Device connected!");
+    Serial.println("4001 connected!");
+
+	ShowConfig("BEFORE config");
 
     // speed Mode
     radar.setSensorMode(eSpeedMode);
@@ -66,38 +78,41 @@ void setup()
     sSensorStatus_t data;
     data = radar.getStatus();
     //  0 stop  1 start
-    Serial.print("work status  = ");
-    Serial.println(data.workStatus);
+    Serial.printf("work status  = %s\n", data.workStatus ? "RUNNING":"STOPPED");
 
     //  0 is exist   1 speed
-    Serial.print("work mode  = ");
-    Serial.println(data.workMode);
+    Serial.printf("work mode  = %s\n", data.workMode ? "DETECT":"SPEED");
 
     //  0 no init    1 init success
-    Serial.print("init status = ");
-    Serial.println(data.initStatus);
-    Serial.println();
+    Serial.printf("init status = %s\n", data.initStatus ? "DONE":"FAILED");
 
     /*
-     * min Detection range Minimum distance, unit cm, range 0.3~20m (30~2000), not exceeding max, otherwise the function is abnormal.
+     * min Detection range Minimum distance, unit cm, range 0.3~20m (30~2000),
+     * not exceeding max, otherwise the function is abnormal.
+     *
      * max Detection range Maximum distance, unit cm, range 2.4~20m (240~2000)
+
      * thres Target detection threshold, dimensionless unit 0.1, range 0~6553.5 (0~65535)
      */
-    if (radar.setDetectThres(/*min*/ 11, /*max*/ 1200, /*thres*/ 10))
+
+#define MIN_DETECTION_RANGE 30
+#define MAX_DETECTION_RANGE 2000
+#define THRESHOLD_VALUE 10
+
+// used for detection, not speed
+#define TRIGGER_RANGE (MAX_DETECTION_RANGE -1)
+     
+    if (radar.setDetectThres(/*min*/ MIN_DETECTION_RANGE,
+    						 /*max*/ MAX_DETECTION_RANGE, 
+    						 /*thres*/ THRESHOLD_VALUE))
         Serial.println("set detect threshold successfully");
 
     // set Fretting Detection
     radar.setFrettingDetection(eON);
 
-    // get confige params
-    Serial.print("min range = ");
-    Serial.println(radar.getTMinRange());
-    Serial.print("max range = ");
-    Serial.println(radar.getTMaxRange());
-    Serial.print("threshold range = ");
-    Serial.println(radar.getThresRange());
-    Serial.print("fretting detection = ");
-    Serial.println(radar.getFrettingDetection());
+	ShowConfig("AFTER config");
+	delay(5000);
+
 }
 
 
