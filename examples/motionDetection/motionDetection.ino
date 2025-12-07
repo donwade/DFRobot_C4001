@@ -66,24 +66,27 @@ void setup()
     sSensorStatus_t data;
     data = radar.getStatus();
     //  0 stop  1 start
-    Serial.print("work status  = ");
-    Serial.println(data.workStatus);
+    Serial.printf("work status = %s\n", data.workStatus ? "RUNNING": "STOPPED");
 
     //  0 is exist   1 speed
-    Serial.print("work mode  = ");
-    Serial.println(data.workMode);
-
+    Serial.printf("work mode  = %s\n", data.workMode ? "SPEED" : "DISTANCE");
     //  0 no init    1 init success
-    Serial.print("init status = ");
-    Serial.println(data.initStatus);
-    Serial.println();
+    Serial.printf("init status = %s\n",data.initStatus ? "DONE" : "NEEDS INIT" );
 
     /*
-     * min Detection range Minimum distance, unit cm, range 0.3~20m (30~2000), not exceeding max, otherwise the function is abnormal.
+     * min Detection range Minimum distance, unit cm, range 0.3~20m (30~2000),
+     * not exceeding max, otherwise the function is abnormal.
+     *
      * max Detection range Maximum distance, unit cm, range 2.4~20m (240~2000)
      * trig Detection range Maximum distance, unit cm, default trig = max
      */
-    if (radar.setDetectionRange(/*min*/ 30, /*max*/ 1001, /*trig*/ 1003))
+#define MIN_DETECTION_RANGE 30
+#define MAX_DETECTION_RANGE 2000
+#define TRIGGER_RANGE (MAX_DETECTION_RANGE -1)
+
+    if (radar.setDetectionRange(/*min*/ MIN_DETECTION_RANGE,
+    							/*max*/ MAX_DETECTION_RANGE,
+    							/*trig*/ TRIGGER_RANGE))
         Serial.println("set detection range successfully!");
 
     // set trigger sensitivity 0 - 9

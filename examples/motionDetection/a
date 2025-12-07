@@ -1,1 +1,3 @@
-abuild m5-stackS2
+m5-stackS2 --dns_name YELLOW -DRADIOLIB_DEBUG -DRADIOLIB_GODMODE
+
+
