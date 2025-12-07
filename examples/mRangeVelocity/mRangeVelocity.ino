@@ -43,8 +43,20 @@ DFRobot_C4001_UART radar(&Serial1, 9600);
 
 void ShowConfig(const char *message)
 {
-	Serial.printf("%s -----\n", message);
+	Serial.printf("\n--------------------------------\n%s -----\n", message);
     // show current  params
+
+    sSensorStatus_t data;
+    data = radar.getStatus();
+    //  0 stop  1 start
+    Serial.printf("work status  = %s\n", data.workStatus ? "RUNNING":"STOPPED");
+
+    //  0 is exist   1 speed
+    Serial.printf("work mode  = %s\n", data.workMode ? "DETECT":"SPEED");
+
+    //  0 no init    1 init success
+    Serial.printf("init status = %s\n", data.initStatus ? "DONE":"FAILED");
+
     Serial.printf("min range = %d\n", radar.getTMinRange());
     Serial.printf("max range = %d\n", radar.getTMaxRange());
     Serial.printf("threshold range = %d\n", radar.getThresRange());
@@ -75,17 +87,6 @@ void setup()
     // speed Mode
     radar.setSensorMode(eSpeedMode);
 
-    sSensorStatus_t data;
-    data = radar.getStatus();
-    //  0 stop  1 start
-    Serial.printf("work status  = %s\n", data.workStatus ? "RUNNING":"STOPPED");
-
-    //  0 is exist   1 speed
-    Serial.printf("work mode  = %s\n", data.workMode ? "DETECT":"SPEED");
-
-    //  0 no init    1 init success
-    Serial.printf("init status = %s\n", data.initStatus ? "DONE":"FAILED");
-
     /*
      * min Detection range Minimum distance, unit cm, range 0.3~20m (30~2000),
      * not exceeding max, otherwise the function is abnormal.
@@ -115,34 +116,64 @@ void setup()
 
 }
 
+typedef struct {
+	float lastEnergyDb;
+	uint32_t onTime;
+} TARGET_DATA;
+
+#define MAX_TARGETS 20
+TARGET_DATA targetDb[MAX_TARGETS];
 
 void loop()
 {
-	static float fmax = -100;
-	static float fmin = 0;
+	static float maxDbFound = -100;
+	static float minDbFound = 0;
+	static uint32_t maxAbsFound = 0;
+	static uint32_t minAbsFound = 0xFFFFFFFF;
+
+	uint8_t targetNumber = radar.getTargetNumber();
 	
-    Serial.print("target number = ");
-    Serial.println(radar.getTargetNumber()); // must exist
-    Serial.print("target Speed  = ");
-    Serial.print(radar.getTargetSpeed());
-    Serial.println(" m/s");
+	assert ( targetNumber < MAX_TARGETS);
 
-    Serial.print("target range  = ");
-    Serial.print(radar.getTargetRange());
-    Serial.println(" m");
+	uint32_t energyNowAbs = radar.getTargetEnergy();
+    //Serial.printf("target energy    = %d\n\n", energyNowAbs);
 
-	uint32_t energyNow = radar.getTargetEnergy();
-    Serial.print("target energy    = ");
-    Serial.println(energyNow);
-
-	if (energyNow)
+	if (energyNowAbs)
 	{
 	    float dbNow = radar.getTargetEnergyDb();
 	    
-	    if (dbNow > fmax) fmax = dbNow;
-	    if (dbNow < fmin) fmin = dbNow;
-	    Serial.printf("%5.3f < %5.3f < %5.3f\n", fmin, dbNow, fmax);
-	    Serial.println();
+	    if (dbNow > maxDbFound) maxDbFound = dbNow;
+	    if (dbNow < minDbFound) minDbFound = dbNow;
+
+	    if (energyNowAbs > maxAbsFound) maxAbsFound = energyNowAbs;
+	    if (energyNowAbs < minAbsFound) minAbsFound = energyNowAbs;
+
+
+	    if (dbNow == targetDb[targetNumber].lastEnergyDb) return;
+
+		Serial.printf("target number = %d\n", targetNumber); // must exist
+
+	    targetDb[targetNumber].lastEnergyDb = dbNow;
+	    
+		Serial.printf("target Speed  = %7.4f m/s \n", radar.getTargetSpeed());
+		Serial.printf("target range  = %5.3f m\n", radar.getTargetRange());
+	    Serial.printf("%5.3f db < %5.3f db < %5.3f db\n", minDbFound, dbNow, maxDbFound);
+	    Serial.printf("%d < %d  < %d (0x%X)\n", minAbsFound, energyNowAbs, maxAbsFound, maxAbsFound);
+		Serial.println();
+		if (!targetDb[targetNumber].onTime) targetDb[targetNumber].onTime = millis();
+			    
+	}
+	else
+	{
+		// target reports no energy. report and close it.
+		//Serial.printf("%d = %d\n", targetNumber, energyNowAbs);
+		if (targetDb[targetNumber].onTime) 
+		{
+			uint32_t deltaT = millis() - targetDb[targetNumber].onTime;
+			targetDb[targetNumber].onTime = 0;
+			Serial.printf("target %d ran for %d mS\n\n", targetNumber, deltaT);
+		}
+	    targetDb[targetNumber].lastEnergyDb = 0.0;
 	}
 	
     delay(100);
