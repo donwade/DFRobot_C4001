@@ -72,7 +72,7 @@ void setup()
     Serial.printf("work mode  = %s\n", data.workMode ? "DETECT":"SPEED");
 
     //  0 no init    1 init success
-    Serial.printf("init status = %s\n", data.initStatus ? "DONE":"FAILED)";
+    Serial.printf("init status = %s\n", data.initStatus ? "DONE":"FAILED");
 
     /*
      * min Detection range Minimum distance, unit cm, range 0.3~20m (30~2000),
