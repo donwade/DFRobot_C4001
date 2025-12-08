@@ -108,8 +108,8 @@ void setup()
     						 /*thres*/ THRESHOLD_VALUE))
         Serial.println("set detect threshold successfully");
 
-    // set Fretting Detection
-    radar.setFrettingDetection(eON);
+    // set Fretting Detection (aka micro gestures)
+    radar.setFrettingDetection(eOFF);
 
 	ShowConfig("AFTER config");
 	delay(5000);
